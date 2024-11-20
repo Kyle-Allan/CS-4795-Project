@@ -34,12 +34,13 @@ def label_node(node):
     child_labels = [label_node(child) for child in node.children]
 
     # Assign label to this node based on child labels
-    if "Win" in child_labels:
+    if "Win" in child_labels or "Winning" in child_labels:
         node.label = "Winning"
-    elif "Draw" in child_labels and "Win" not in child_labels:
-        node.label = "Drawing"
-    elif "Loss" in child_labels and "Win" not in child_labels:
+    elif all(label in {"Losing", "Loss"} for label in child_labels):
         node.label = "Losing"
+    elif "Draw" in child_labels or "Drawing" in child_labels:
+        if "Win" not in child_labels and "Winning" not in child_labels:
+            node.label = "Drawing"
     else:
         node.label = "Neutral"  # Fallback if no other label applies
 
