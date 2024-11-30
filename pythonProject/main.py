@@ -1,113 +1,98 @@
-import tensorflow as tf
+import numpy as np
 from tensorflow.keras.datasets import mnist, fashion_mnist
 from tensorflow.keras.utils import to_categorical
+
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 import matplotlib.pyplot as plt
 
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import numpy as np
 
-# Load both datasets
-def load_and_preprocess_data():
-    # Load MNIST
+def load_and_combine_datasets():
+    # Load MNIST and Fashion MNIST datasets
     (mnist_train_X, mnist_train_y), (mnist_test_X, mnist_test_y) = mnist.load_data()
-    # Load Fashion MNIST
     (fashion_train_X, fashion_train_y), (fashion_test_X, fashion_test_y) = fashion_mnist.load_data()
 
-    # Normalize the pixel values to the range [0, 1]
-    mnist_train_X, mnist_test_X = mnist_train_X / 255.0, mnist_test_X / 255.0
-    fashion_train_X, fashion_test_X = fashion_train_X / 255.0, fashion_test_X / 255.0
+    # Make the Fashion MNIST labels writable
+    fashion_train_y = fashion_train_y.copy()
+    fashion_test_y = fashion_test_y.copy()
 
-    # Reshape data to include a channel dimension
-    mnist_train_X = mnist_train_X.reshape(-1, 28, 28, 1)
-    mnist_test_X = mnist_test_X.reshape(-1, 28, 28, 1)
-    fashion_train_X = fashion_train_X.reshape(-1, 28, 28, 1)
-    fashion_test_X = fashion_test_X.reshape(-1, 28, 28, 1)
+    # Relabel Fashion MNIST classes to avoid overlap with MNIST
+    fashion_train_y += 10
+    fashion_test_y += 10
+
+    # Combine train and test sets
+    train_X = np.concatenate((mnist_train_X, fashion_train_X), axis=0)
+    train_y = np.concatenate((mnist_train_y, fashion_train_y), axis=0)
+    test_X = np.concatenate((mnist_test_X, fashion_test_X), axis=0)
+    test_y = np.concatenate((mnist_test_y, fashion_test_y), axis=0)
+
+    # Normalize the pixel values to the range [0, 1]
+    train_X = train_X / 255.0
+    test_X = test_X / 255.0
+
+    # Reshape to add channel dimension (28x28x1)
+    train_X = train_X.reshape(-1, 28, 28, 1)
+    test_X = test_X.reshape(-1, 28, 28, 1)
 
     # One-hot encode the labels
-    mnist_train_y = to_categorical(mnist_train_y, 10)
-    mnist_test_y = to_categorical(mnist_test_y, 10)
-    fashion_train_y = to_categorical(fashion_train_y, 10)
-    fashion_test_y = to_categorical(fashion_test_y, 10)
+    train_y = to_categorical(train_y, 20)  # 20 classes: 0-9 for MNIST, 10-19 for Fashion MNIST
+    test_y = to_categorical(test_y, 20)
 
-    return (mnist_train_X, mnist_train_y, mnist_test_X, mnist_test_y), \
-           (fashion_train_X, fashion_train_y, fashion_test_X, fashion_test_y)
+    return train_X, train_y, test_X, test_y
 
 
-def create_cnn():
+
+def create_unified_cnn():
     model = Sequential([
         Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+        MaxPooling2D((2, 2)),
         Conv2D(64, (3, 3), activation='relu'),
         MaxPooling2D((2, 2)),
         Conv2D(128, (3, 3), activation='relu'),
-        MaxPooling2D((2, 2)),
         Flatten(),
         Dense(256, activation='relu'),
-        Dropout(0.4),  # Slight dropout for deeper models
-        Dense(10, activation='softmax')
+        Dropout(0.5),
+        Dense(20, activation='softmax')  # 20 output classes (10 MNIST + 10 Fashion MNIST)
     ])
 
-    model.compile(optimizer='adam',
-                  loss='categorical_crossentropy',
-                  metrics=['accuracy'])
+    model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
 
-def train_and_evaluate_model(model, train_X, train_y, test_X, test_y, dataset_name):
-    history = model.fit(train_X, train_y, epochs=10, batch_size=32, validation_data=(test_X, test_y), verbose=2)
+# Load combined dataset
+train_X, train_y, test_X, test_y = load_and_combine_datasets()
 
-    # Evaluate the model
-    test_loss, test_accuracy = model.evaluate(test_X, test_y, verbose=0)
-    print(f"{dataset_name} - Test Accuracy: {test_accuracy:.4f}")
+# Create and train the model
+model = create_unified_cnn()
+history = model.fit(train_X, train_y, epochs=15, batch_size=32, validation_data=(test_X, test_y))
 
-    # Plot learning curves
-    plt.plot(history.history['accuracy'], label='Train Accuracy')
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.title(f"{dataset_name} Accuracy")
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.show()
+# Evaluate the model
+test_loss, test_accuracy = model.evaluate(test_X, test_y, verbose=2)
+print(f"Test Accuracy on Combined Dataset: {test_accuracy:.4f}")
 
 
-if __name__ == "__main__":
-    # Load datasets
-    (mnist_train_X, mnist_train_y, mnist_test_X, mnist_test_y), \
-    (fashion_train_X, fashion_train_y, fashion_test_X, fashion_test_y) = load_and_preprocess_data()
-    '''
-    # Create and train the model for MNIST
-    print("Training on MNIST dataset...")
-    mnist_model = create_cnn()
-    train_and_evaluate_model(mnist_model, mnist_train_X, mnist_train_y, mnist_test_X, mnist_test_y, "MNIST")
-    '''
-    # Create and train the model for Fashion MNIST
-    print("Training on Fashion MNIST dataset...")
-    fashion_model = create_cnn()
-    train_and_evaluate_model(fashion_model, fashion_train_X, fashion_train_y, fashion_test_X, fashion_test_y, "Fashion MNIST")
+# Plot training and validation accuracy
+plt.plot(history.history['accuracy'], label='Train Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Unified Model Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
 
-    # Use the trained model to predict labels for the test set
-    predictions = fashion_model.predict(fashion_test_X)
 
-    # Convert predicted probabilities to class labels
-    predicted_labels = predictions.argmax(axis=1)
+# Get predictions and true labels
+y_pred = model.predict(test_X).argmax(axis=1)
+y_true = test_y.argmax(axis=1)
 
-    # Print the first 10 predicted labels and their corresponding true labels
-    print("Predicted labels for the first 10 test images:", predicted_labels[:10])
-    print("True labels for the first 10 test images:", fashion_test_y[:10].argmax(axis=1))
+# Compute confusion matrix
+cm = confusion_matrix(y_true, y_pred)
 
-    # Define Fashion MNIST class names
-    class_names = [
-        "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
-        "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"
-    ]
+# Display confusion matrix
+class_names = [f"MNIST {i}" for i in range(10)] + [f"Fashion {i}" for i in range(10)]
+disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+disp.plot(cmap='viridis', xticks_rotation=90)
+plt.show()
 
-    # Plot the first 9 test images along with predictions
-    plt.figure(figsize=(10, 10))
-    for i in range(9):
-        plt.subplot(3, 3, i + 1)
-        plt.imshow(fashion_test_X[i].reshape(28, 28), cmap='gray')
-        predicted_label = class_names[predicted_labels[i]]
-        true_label = class_names[fashion_test_y[i].argmax()]
-        plt.title(f"Pred: {predicted_label}\nTrue: {true_label}")
-        plt.axis('off')
-    plt.tight_layout()
-    plt.show()
