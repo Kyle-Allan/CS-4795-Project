@@ -1,13 +1,12 @@
 import numpy as np
 from tensorflow.keras.datasets import mnist, fashion_mnist
 from tensorflow.keras.utils import to_categorical
-
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout
 import matplotlib.pyplot as plt
-
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import numpy as np
+
 
 def load_and_combine_datasets():
     # Load MNIST and Fashion MNIST datasets
@@ -41,7 +40,6 @@ def load_and_combine_datasets():
     test_y = to_categorical(test_y, 20)
 
     return train_X, train_y, test_X, test_y
-
 
 
 def create_unified_cnn():
@@ -95,4 +93,3 @@ class_names = [f"MNIST {i}" for i in range(10)] + [f"Fashion {i}" for i in range
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
 disp.plot(cmap='viridis', xticks_rotation=90)
 plt.show()
-
