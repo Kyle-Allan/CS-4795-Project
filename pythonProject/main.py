@@ -112,98 +112,64 @@ def create_very_deep_cnn():
 # Load combined dataset
 train_X, train_y, test_X, test_y = load_and_combine_datasets()
 
-class_names = [f"MNIST {i}" for i in range(10)] + [f"Fashion {i}" for i in range(10)]
-
-
 # Train the baseline model
 baseline_model = create_baseline_cnn()
 history_baseline = baseline_model.fit(train_X, train_y, epochs=10, batch_size=32, validation_data=(test_X, test_y))
+# Save the baseline model
+baseline_model.save("baseline_model.h5")
 
 
+'''
 # Evaluate the baseline model
 test_loss, test_accuracy = baseline_model.evaluate(test_X, test_y, verbose=2)
 print(f"Baseline Model Test Accuracy: {test_accuracy:.4f}")
-
-# Plot training and validation accuracy
-plt.plot(history_baseline.history['accuracy'], label='Train Accuracy')
-plt.plot(history_baseline.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Baseline Model Accuracy on Combined Dataset')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
 # Get predictions and true labels for confusion matrix
 y_pred = baseline_model.predict(test_X).argmax(axis=1)
 y_true = test_y.argmax(axis=1)
 
 # Compute confusion matrix
 cm = confusion_matrix(y_true, y_pred)
-
-# Display confusion matrix
-
-disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
-disp.plot(cmap='viridis', xticks_rotation=90)
-plt.show()
-
+# Store the confusion matrix and title
+confusion_matrices.append(cm)
+titles.append('Confusion Matrix: Baseline Model')
+'''
 
 # Train the deeper CNN model
 deeper_cnn = create_deeper_cnn()
 history_deeper = deeper_cnn.fit(train_X, train_y, epochs=10, batch_size=32, validation_data=(test_X, test_y))
-
+# Save the deeper CNN model
+deeper_cnn.save("deeper_cnn_model.h5")
+'''
 # Evaluate the deeper CNN model
 test_loss_deeper, test_accuracy_deeper = deeper_cnn.evaluate(test_X, test_y, verbose=2)
 print(f"Deeper CNN Test Accuracy: {test_accuracy_deeper:.4f}")
-
-# Plot training and validation accuracy for the deeper CNN
-plt.plot(history_deeper.history['accuracy'], label='Train Accuracy')
-plt.plot(history_deeper.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Deeper CNN Model Accuracy on Combined Dataset')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
 # Get predictions and true labels for confusion matrix (Deeper CNN)
 y_pred_deeper = deeper_cnn.predict(test_X).argmax(axis=1)
 y_true_deeper = test_y.argmax(axis=1)
 
 # Compute confusion matrix for the deeper CNN
 cm_deeper = confusion_matrix(y_true_deeper, y_pred_deeper)
-
-# Display confusion matrix for the deeper CNN
-disp_deeper = ConfusionMatrixDisplay(confusion_matrix=cm_deeper, display_labels=class_names)
-disp_deeper.plot(cmap='viridis', xticks_rotation=90)
-plt.title('Confusion Matrix: Deeper CNN')
-plt.show()
-
+# Store the confusion matrix and title
+confusion_matrices.append(cm_deeper)
+titles.append('Confusion Matrix: Deeper CNN')
+'''
 
 # Train the very deep CNN model
 very_deep_cnn = create_very_deep_cnn()
 history_very_deep = very_deep_cnn.fit(train_X, train_y, epochs=10, batch_size=32, validation_data=(test_X, test_y))
-
+# Save the very deep CNN model
+very_deep_cnn.save("very_deep_cnn_model.h5")
+'''
 # Evaluate the very deep CNN model
 test_loss_very_deep, test_accuracy_very_deep = very_deep_cnn.evaluate(test_X, test_y, verbose=2)
 print(f"Very Deep CNN Test Accuracy: {test_accuracy_very_deep:.4f}")
-
-# Plot training and validation accuracy for the very deep CNN
-plt.plot(history_very_deep.history['accuracy'], label='Train Accuracy')
-plt.plot(history_very_deep.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Very Deep CNN Model Accuracy on Combined Dataset')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-plt.show()
-
 # Get predictions and true labels for confusion matrix (Very Deep CNN)
 y_pred_very_deep = very_deep_cnn.predict(test_X).argmax(axis=1)
 y_true_very_deep = test_y.argmax(axis=1)
 
 # Compute confusion matrix for the very deep CNN
 cm_very_deep = confusion_matrix(y_true_very_deep, y_pred_very_deep)
-
-# Display confusion matrix for the very deep CNN
-disp_very_deep = ConfusionMatrixDisplay(confusion_matrix=cm_very_deep, display_labels=class_names)
-disp_very_deep.plot(cmap='viridis', xticks_rotation=90)
-plt.title('Confusion Matrix: Very Deep CNN')
-plt.show()
+# Store the confusion matrix and title
+confusion_matrices.append(cm_very_deep)
+titles.append('Confusion Matrix: Very Deep CNN')
+'''
