@@ -41,7 +41,7 @@ def load_and_combine_datasets():
 
     return train_X, train_y, test_X, test_y
 
-
+# 3 convolution layers
 def create_unified_cnn():
     model = Sequential([
         Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
